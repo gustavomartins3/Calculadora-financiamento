@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Financiamento Imobiliário</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      padding: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 700px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      font-weight: bold;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .resumo {
+      margin-top: 30px;
+      background: #f4f4f4;
+      padding: 15px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Calculadora de Financiamento Imobiliário</h2>
+
+<label>Valor do Imóvel (R$):
+  <input type="text" id="valorImovel" placeholder="Ex: 300000">
+</label>
+
+<label>Data de Entrega do Imóvel:
+  <input type="date" id="dataEntrega">
+</label>
+
+<label>Percentual a ser pago até a entrega (%):
+  <input type="number" id="percentualObra" placeholder="Ex: 30" oninput="atualizarValores()">
+</label>
+
+<label>Valor a ser pago durante a obra (R$):
+  <input type="text" id="valorObra" readonly>
+</label>
+
+<label>Valor da Entrada (10%) (R$):
+  <input type="text" id="valorEntrada" readonly>
+</label>
+
+<label>Quantidade de Parcelas Mensais:
+  <input type="number" id="qtdParcelas" readonly>
+</label>
+
+<label>Percentual Parcela Mensal (%):
+  <input type="number" id="percentualMensal" placeholder="Ex: 15">
+</label>
+  <input type="number" id="qtdParcelas" readonly>
+</label>
+
+<label>Quantidade de Parcelas Intercaladas:
+  <input type="number" id="qtdIntercaladas" readonly>
+</label>
+
+<label>Percentual Intercaladas (%):
+  <input type="number" id="percentualIntercaladas" placeholder="Ex: 15">
+</label>
+  <input type="number" id="qtdIntercaladas" readonly>
+</label>
+
+<button onclick="calcular()">Calcular</button>
+
+<div class="resumo" id="resumo"></div>
+
+<script>
+function formatarMoeda(valor) {
+  return 'R$ ' + valor.toFixed(2).replace('.', ',');
+}
+
+function atualizarValores() {
+  const valorImovel = parseFloat(document.getElementById("valorImovel").value.replace(/[^0-9]/g, '')) || 0;
+  const percentualObra = parseFloat(document.getElementById("percentualObra").value) || 0;
+
+  const valorObra = valorImovel * (percentualObra / 100);
+  const entrada = valorImovel * 0.10;
+
+  document.getElementById("valorObra").value = formatarMoeda(valorObra / 100);
+  document.getElementById("valorEntrada").value = formatarMoeda(entrada / 100);
+
+  calcularParcelasAutomaticamente();
+}
+
+function calcularParcelasAutomaticamente() {
+  const dataEntrega = new Date(document.getElementById("dataEntrega").value);
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const anoEntrega = dataEntrega.getFullYear();
+  const mesAtual = hoje.getMonth() + 1;
+  const mesEntrega = dataEntrega.getMonth() + 1;
+
+  let mesesTotais = (anoEntrega - anoAtual) * 12 + (mesEntrega - mesAtual);
+  if (mesesTotais < 0) mesesTotais = 0;
+
+  const qtdParcelas = mesesTotais > 0 ? mesesTotais - 1 : 0;
+
+  let qtdIntercaladas = 0;
+  let dataTemp = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  while (dataTemp < dataEntrega) {
+    const mes = dataTemp.getMonth() + 1;
+    if (mes === 6 || mes === 12) qtdIntercaladas++;
+    dataTemp.setMonth(dataTemp.getMonth() + 1);
+  }
+
+  document.getElementById("qtdParcelas").value = qtdParcelas;
+  document.getElementById("qtdIntercaladas").value = qtdIntercaladas;
+}
+
+function calcular() {
+  const valorImovel = parseFloat(document.getElementById("valorImovel").value.replace(/[^0-9]/g, '')) || 0;
+  const percentualObra = parseFloat(document.getElementById("percentualObra").value) || 0;
+  const qtdParcelas = parseInt(document.getElementById("qtdParcelas").value);
+  const qtdIntercaladas = parseInt(document.getElementById("qtdIntercaladas").value);
+  const valorObra = valorImovel * (percentualObra / 100);
+  const entrada = valorImovel * 0.10;
+
+  const saldoDuranteObra = valorObra - entrada;
+
+  const percentualMensal = parseFloat(document.getElementById("percentualMensal").value) || 0;
+  const percentualIntercaladas = parseFloat(document.getElementById("percentualIntercaladas").value) || 0;
+
+  const valorTotalMensais = valorImovel * (percentualMensal / 100);
+  const valorParcelaMensal = qtdParcelas > 0 ? valorTotalMensais / qtdParcelas : 0;
+
+  const valorTotalIntercaladas = valorImovel * (percentualIntercaladas / 100);
+  const valorParcelaIntercalada = qtdIntercaladas > 0 ? valorTotalIntercaladas / qtdIntercaladas : 0;
+
+  const totalPagoDuranteObra = entrada + (valorParcelaMensal * qtdParcelas) + (valorParcelaIntercalada * qtdIntercaladas);
+  const saldoAposEntrega = valorImovel - totalPagoDuranteObra;
+
+  document.getElementById("resumo").innerHTML = `
+    <h3>Resumo para o cliente</h3>
+    <p><strong>Valor total do imóvel:</strong> ${formatarMoeda(valorImovel / 100)}</p>
+    <p><strong>Valor a ser pago durante a obra:</strong> ${formatarMoeda(valorObra / 100)}</p>
+    <p><strong>Valor da entrada (10%):</strong> ${formatarMoeda(entrada / 100)}</p>
+    <hr>
+    <p><strong>Parcelas Mensais:</strong> ${qtdParcelas} x ${formatarMoeda(valorParcelaMensal / 100)} (Total: ${formatarMoeda(valorParcelaMensal * qtdParcelas / 100)})</p>
+    <p><strong>Intercaladas:</strong> ${qtdIntercaladas} x ${formatarMoeda(valorParcelaIntercalada / 100)} (Total: ${formatarMoeda(valorParcelaIntercalada * qtdIntercaladas / 100)})</p>
+    <hr>
+    <p><strong>Total pago durante a obra:</strong> ${formatarMoeda(totalPagoDuranteObra / 100)}</p>
+    <p><strong>Saldo a pagar após entrega:</strong> ${formatarMoeda(saldoAposEntrega / 100)}</p>
+  `;
+}
+</script>
+
+</body>
+</html>
